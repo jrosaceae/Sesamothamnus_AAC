@@ -1,0 +1,542 @@
+---
+title: Zaborksy et al.—American Journal of Botany 2026—Appendix S5.
+
+
+
+fontsize: 12pt
+output:
+  pdf_document:
+    toc: yes
+    toc_depth: 3
+header-includes:
+  - \usepackage{titling}
+  - \pretitle{\begin{flushright}}
+  - \posttitle{\end{flushright}}
+  - \makeatletter
+  - \renewcommand{\maketitle}{
+      \begin{flushright}
+        {\normalsize \@title \par}
+      \end{flushright}
+      \begin{flushleft}
+        {\normalsize \textbf{Appendix S5.} The evolution of seven vegetative and floral traits in \emph{Sesamothamnus} (Pedaliaceae) with parsimony reconstruction. The most parsimonious reconstruction (MPR) as well as the accelerated transformation (ACCTRAN) reconstruction are presented. Trait evolution is summarized on the BEAST chronogram in Fig. 4. Traits are scored as in Ihlenfeldt (2002, 2010) for \emph{Sesamothamnus} with all outgroups given the plesiomorphic states as seen in the sister group, the tribe Sesameae (see Appendix S1). \par}
+      \end{flushleft}
+      \vskip 1em
+    }
+  - \makeatother
+graphics: yes
+---
+
+
+```{r setup, include=FALSE, echo=FALSE, message=FALSE, warning=FALSE}
+library(corHMM)
+library(reshape2)
+library(readxl)
+library(BioGeoBEARS)
+library(magrittr)
+library(geiger)
+library(phytools)
+library(dplyr)
+library(phangorn)
+```
+
+\pagebreak
+
+```{r, label="import tree",eval=T, fig.height=75, fig.width=35, fig.align='center', echo=FALSE, cache=TRUE, message=FALSE, warning=FALSE}
+# import tree
+tree <- read.nexus("BEAST_Sesamothamnus_2025_nex.tre") %>% ladderize(right=F)
+
+# clean tips
+tips <- tree$tip.label %>% data.frame() %>% setNames("tip")
+tips_split<-colsplit(tips$tip,"_",c("code1","code2","genus","epithet"))
+tips_split$species <- paste0(tips_split$genus,"_",tips_split$epithet,"_",tips_split$code2)
+
+
+# rename tips to match to data
+tree$tip.label <- tips_split$species 
+
+tree <- drop.tip(tree,c("Sesamothamnus_guerichii_S11","Sesamothamnus_guerichii_S12",
+                        "Sesamothamnus_lugardii_S04","Sesamothamnus_rivae_S08",
+                        "Sesamothamnus_lugardii_S14"))
+
+tree$tip.label <- gsub("Ceratotheca_triloba_Cet","Sesamum_trilobum_Cet",tree$tip.label)
+
+
+# import data
+traits <- read_excel("sesamo.xlsx")
+traits_spp_split<-colsplit(traits$species,"_",c("code1","code2","order","family","genus","epithet","seq"))
+traits_spp_split$species <- paste0(traits_spp_split$genus,"_",traits_spp_split$epithet,"_",traits_spp_split$code2)
+traits <- cbind(traits_spp_split[8], traits[2:8])
+traits$species <- gsub("Ceratotheca_triloba_Cet","Sesamum_trilobum_Cet",traits$species)
+
+
+# match tree and data
+rownames(traits) <- traits$species
+compData <- treedata(tree,traits, sort=T)
+compTree <- compData$phy
+compData <- data.frame(compData$data)
+
+```
+
+# Habit
+
+## MPR 
+
+```{r, label="HabitMPR",eval=T, fig.height=3.5, fig.width=6.5, fig.align='center', echo=FALSE, cache=TRUE, message=FALSE, warning=FALSE, results="hide"}
+# make tip labels 
+color_by_habit <- character(length(compData$habit))
+color_by_habit[compData$habit == "0"] <- "gray"
+color_by_habit[compData$habit == "1"] <- "orange"
+color_by_habit[compData$habit == "2"] <- "purple"
+color_by_habit[compData$habit == "3"] <- "forestgreen"
+
+# Make phyDat
+compdata_habit<- as.matrix(compData[1:2])
+compdata_habit_phyDat <- phyDat(compdata_habit, type = "USER", levels=c("0","1","2","3"))
+
+# Run parsimony reconstruction
+recon_habit_pars <- ancestral.pars(compTree, compdata_habit_phyDat, type="MPR",return = "prob")
+
+# Get node values
+recon_habit_pars_nodes <- list()
+for(i in 1:length(recon_habit_pars)) 
+  recon_habit_pars_nodes[[i]] <-  recon_habit_pars[[i]] 
+
+recon_habit_pars_nodes <- do.call(rbind,recon_habit_pars_nodes)
+
+#fit <- pml(compTree, compdata_habit_phyDat)
+#recon_states_ml <- ancestral.pml(fit, type = "marginal")
+#plotAnc(compTree, recon_states_pars, col = c("gray","orange","purple","forestgreen"),
+#        cex.pie=0.5,edge.width=2, show.tip.label = T ,pos = "topleft")
+
+# plot
+plot(compTree, no.margin = T, label.offset = 1, cex=0.9)
+nodelabels(pie=recon_habit_pars_nodes[11:19,],piecol=c("gray","orange","purple","forestgreen"),cex=0.6)
+tiplabels(bg=color_by_habit, pch=22, cex=1, adj=1, lwd=0, col=color_by_habit)
+legend("topleft", legend = c("Herb","Shrub", "Small tree", "Tree"),title = "Habit",inset = 0, pch = 15,
+  col = c("gray","orange","purple","forestgreen"),
+  adj = 0, cex = 0.7, pt.cex = 1.25, bty="n", y.intersp = 1)
+
+```
+
+## ACCTRAN 
+
+```{r, label="HabitACCTRAN",eval=T, fig.height=3.5, fig.width=6.5, fig.align='center', echo=FALSE, cache=TRUE, message=FALSE, warning=FALSE, results="hide"}
+# make tip labels 
+color_by_habit <- character(length(compData$habit))
+color_by_habit[compData$habit == "0"] <- "gray"
+color_by_habit[compData$habit == "1"] <- "orange"
+color_by_habit[compData$habit == "2"] <- "purple"
+color_by_habit[compData$habit == "3"] <- "forestgreen"
+
+# Make phyDat
+compdata_habit<- as.matrix(compData[1:2])
+compdata_habit_phyDat <- phyDat(compdata_habit, type = "USER", levels=c("0","1","2","3"))
+
+# Run parsimony reconstruction
+recon_habit_pars <- ancestral.pars(compTree, compdata_habit_phyDat, type="ACCTRAN",return = "prob")
+
+# Get node values
+recon_habit_pars_nodes <- list()
+for(i in 1:length(recon_habit_pars)) 
+  recon_habit_pars_nodes[[i]] <-  recon_habit_pars[[i]] 
+
+recon_habit_pars_nodes <- do.call(rbind,recon_habit_pars_nodes)
+
+#fit <- pml(compTree, compdata_habit_phyDat)
+#recon_states_ml <- ancestral.pml(fit, type = "marginal")
+#plotAnc(compTree, recon_states_pars, col = c("gray","orange","purple","forestgreen"),
+#        cex.pie=0.5,edge.width=2, show.tip.label = T ,pos = "topleft")
+
+# plot
+plot(compTree, no.margin = T, label.offset = 1, cex=0.9)
+nodelabels(pie=recon_habit_pars_nodes[11:19,],piecol=c("gray","orange","purple","forestgreen"),cex=0.6)
+tiplabels(bg=color_by_habit, pch=22, cex=1, adj=1, lwd=0, col=color_by_habit)
+legend("topleft", legend = c("Herb","Shrub", "Small tree", "Tree"),title = "Habit",inset = 0, pch = 15,
+  col = c("gray","orange","purple","forestgreen"),
+  adj = 0, cex = 0.7, pt.cex = 1.25, bty="n", y.intersp = 1)
+
+```
+
+\pagebreak
+
+# Succulence 
+
+## MPR
+
+```{r, label="succulenceMPR",eval=T, fig.height=3.5, fig.width=6.5, fig.align='center', echo=FALSE, cache=TRUE, message=FALSE, warning=FALSE, results="hide"}
+# make tip labels 
+color_by_succulence <- character(length(compData$succulence))
+color_by_succulence[compData$succulence == "0"] <- "gray"
+color_by_succulence[compData$succulence == "1"] <- "orange"
+color_by_succulence[compData$succulence == "2"] <- "purple"
+color_by_succulence[compData$succulence == "3"] <- "forestgreen"
+# Make phyDat
+
+compdata_succulence<- as.matrix(compData[c(1,3)])
+compdata_succulence_phyDat <- phyDat(compdata_succulence, type = "USER", levels=c("0","1","2","3"))
+
+# Run parsimony reconstruction
+recon_succulence_pars <- ancestral.pars(compTree, compdata_succulence_phyDat, type="MPR",return = "prob")
+
+# Get node values
+recon_succulence_pars_nodes <- list()
+for(i in 1:length(recon_succulence_pars)) 
+  recon_succulence_pars_nodes[[i]] <-  recon_succulence_pars[[i]] 
+
+recon_succulence_pars_nodes <- do.call(rbind,recon_succulence_pars_nodes)
+
+# plot
+plot(compTree, no.margin = T, label.offset = 1, cex=0.9)
+nodelabels(pie=recon_succulence_pars_nodes[11:19,],piecol=c("gray","orange","purple","forestgreen"),cex=0.6)
+tiplabels(bg=color_by_succulence, pch=22, cex=1, adj=1, lwd=0, col=color_by_succulence)
+legend("topleft", legend = c("Absent","Low", "Medium", "High"),title = "Succulence",inset = 0, pch = 15,
+  col = c("gray","orange","purple","forestgreen"),
+  adj = 0, cex = 0.7, pt.cex = 1.25, bty="n", y.intersp = 1)
+
+```
+
+## ACCTRAN
+
+```{r, label="succulenceACCTRAN",eval=T, fig.height=3.5, fig.width=6.5, fig.align='center', echo=FALSE, cache=TRUE, message=FALSE, warning=FALSE, results="hide"}
+# make tip labels 
+color_by_succulence <- character(length(compData$succulence))
+color_by_succulence[compData$succulence == "0"] <- "gray"
+color_by_succulence[compData$succulence == "1"] <- "orange"
+color_by_succulence[compData$succulence == "2"] <- "purple"
+color_by_succulence[compData$succulence == "3"] <- "forestgreen"
+# Make phyDat
+
+compdata_succulence<- as.matrix(compData[c(1,3)])
+compdata_succulence_phyDat <- phyDat(compdata_succulence, type = "USER", levels=c("0","1","2","3"))
+
+# Run parsimony reconstruction
+recon_succulence_pars <- ancestral.pars(compTree, compdata_succulence_phyDat, type="ACCTRAN",return = "prob")
+
+# Get node values
+recon_succulence_pars_nodes <- list()
+for(i in 1:length(recon_succulence_pars)) 
+  recon_succulence_pars_nodes[[i]] <-  recon_succulence_pars[[i]] 
+
+recon_succulence_pars_nodes <- do.call(rbind,recon_succulence_pars_nodes)
+
+# plot
+plot(compTree, no.margin = T, label.offset = 1, cex=0.9)
+nodelabels(pie=recon_succulence_pars_nodes[11:19,],piecol=c("gray","orange","purple","forestgreen"),cex=0.6)
+tiplabels(bg=color_by_succulence, pch=22, cex=1, adj=1, lwd=0, col=color_by_succulence)
+legend("topleft", legend = c("Absent","Low", "Medium", "High"),title = "Succulence",inset = 0, pch = 15,
+  col = c("gray","orange","purple","forestgreen"),
+  adj = 0, cex = 0.7, pt.cex = 1.25, bty="n", y.intersp = 1)
+
+```
+
+\pagebreak
+
+# Mucilage
+
+## MPR
+
+```{r, label="mucilageMPR",eval=T, fig.height=3.5, fig.width=6.5, fig.align='center', echo=FALSE, cache=TRUE, message=FALSE, warning=FALSE, results="hide"}
+# make tip labels 
+color_by_mucilage <- character(length(compData$mucilage))
+color_by_mucilage[compData$mucilage == "0"] <- "gray"
+color_by_mucilage[compData$mucilage == "1"] <- "orange"
+
+compdata_mucilage<- as.matrix(compData[c(1,4)])
+compdata_mucilage_phyDat <- phyDat(compdata_mucilage, type = "USER", levels=c("0","1"))
+
+recon_mucilage_pars <- ancestral.pars(compTree, compdata_mucilage_phyDat, type="MPR",return = "prob")
+
+recon_mucilage_pars_nodes <- list()
+for(i in 1:length(recon_mucilage_pars)) 
+  recon_mucilage_pars_nodes[[i]] <-  recon_mucilage_pars[[i]] 
+
+recon_mucilage_pars_nodes <- do.call(rbind,recon_mucilage_pars_nodes)
+
+# plot
+plot(compTree, no.margin = T, label.offset = 1, cex=0.9)
+nodelabels(pie=recon_mucilage_pars_nodes[11:19,],piecol=c("gray","orange"),cex=0.6)
+tiplabels(bg=color_by_mucilage, pch=22, cex=1, adj=1, lwd=0, col=color_by_mucilage)
+legend("topleft", legend = c("Quadrangular","Stellate"),title = "Mucilaginous hair head shape",inset = 0, pch = 15,
+  col = c("gray","orange"),
+  adj = 0, cex = 0.7, pt.cex = 1, bty="n", y.intersp = 1)
+```
+
+## ACCTRAN
+
+```{r, label="mucilageACCTRAN",eval=T, fig.height=3.5, fig.width=6.5, fig.align='center', echo=FALSE, cache=TRUE, message=FALSE, warning=FALSE, results="hide"}
+# make tip labels 
+color_by_mucilage <- character(length(compData$mucilage))
+color_by_mucilage[compData$mucilage == "0"] <- "gray"
+color_by_mucilage[compData$mucilage == "1"] <- "orange"
+
+compdata_mucilage<- as.matrix(compData[c(1,4)])
+compdata_mucilage_phyDat <- phyDat(compdata_mucilage, type = "USER", levels=c("0","1"))
+
+recon_mucilage_pars <- ancestral.pars(compTree, compdata_mucilage_phyDat, type="ACCTRAN",return = "prob")
+
+recon_mucilage_pars_nodes <- list()
+for(i in 1:length(recon_mucilage_pars)) 
+  recon_mucilage_pars_nodes[[i]] <-  recon_mucilage_pars[[i]] 
+
+recon_mucilage_pars_nodes <- do.call(rbind,recon_mucilage_pars_nodes)
+
+# plot
+plot(compTree, no.margin = T, label.offset = 1, cex=0.9)
+nodelabels(pie=recon_mucilage_pars_nodes[11:19,],piecol=c("gray","orange"),cex=0.6)
+tiplabels(bg=color_by_mucilage, pch=22, cex=1, adj=1, lwd=0, col=color_by_mucilage)
+legend("topleft", legend = c("Quadrangular","Stellate"),title = "Mucilaginous hair head shape",inset = 0, pch = 15,
+  col = c("gray","orange"),
+  adj = 0, cex = 0.7, pt.cex = 1, bty="n", y.intersp = 1)
+```
+
+\pagebreak
+
+# Flower Color
+
+## MPR
+
+```{r, label="colorMPR",eval=T, fig.height=3.5, fig.width=6.5, fig.align='center', echo=FALSE, cache=TRUE, message=FALSE, warning=FALSE, results="hide"}
+# make tip labels 
+color_by_color <- character(length(compData$color))
+color_by_color[compData$color == "0"] <- "gray"
+color_by_color[compData$color == "1"] <- "antiquewhite"
+color_by_color[compData$color == "2"] <- "burlywood4"
+color_by_color[compData$color == "3"] <- "gold"
+
+compdata_color<- as.matrix(compData[c(1,5)])
+compdata_color_phyDat <- phyDat(compdata_color, type = "USER", levels=c("0","1","2","3"))
+recon_color_pars <- ancestral.pars(compTree, compdata_color_phyDat, type="MPR",return = "prob")
+
+recon_color_pars_nodes <- list()
+for(i in 1:length(recon_color_pars)) 
+  recon_color_pars_nodes[[i]] <-  recon_color_pars[[i]] 
+
+recon_color_pars_nodes <- do.call(rbind,recon_color_pars_nodes)
+
+# plot
+plot(compTree, no.margin = T, label.offset = 1, cex=0.9)
+nodelabels(pie=recon_color_pars_nodes[11:19,],piecol=c("gray","antiquewhite","burlywood4",
+                                                       "gold"),cex=0.6)
+tiplabels(bg=color_by_color, pch=22, cex=1, adj=1, lwd=0, col=color_by_color)
+legend("topleft", legend = c("Non-white","White","Cream-white","Deep yellow"),title = "Flower color",inset = 0, pch = 15,
+       col = c("gray","antiquewhite","burlywood4","gold"),
+       adj = 0, cex = 0.7, pt.cex = 1.25, bty="n", y.intersp = 1)
+```
+
+## ACCTRAN
+
+
+```{r, label="colorACCTRAN",eval=T, fig.height=3.5, fig.width=6.5, fig.align='center', echo=FALSE, cache=TRUE, message=FALSE, warning=FALSE, results="hide"}
+# make tip labels 
+color_by_color <- character(length(compData$color))
+color_by_color[compData$color == "0"] <- "gray"
+color_by_color[compData$color == "1"] <- "antiquewhite"
+color_by_color[compData$color == "2"] <- "burlywood4"
+color_by_color[compData$color == "3"] <- "gold"
+
+compdata_color<- as.matrix(compData[c(1,5)])
+compdata_color_phyDat <- phyDat(compdata_color, type = "USER", levels=c("0","1","2","3"))
+recon_color_pars <- ancestral.pars(compTree, compdata_color_phyDat, type="ACCTRAN",return = "prob")
+
+recon_color_pars_nodes <- list()
+for(i in 1:length(recon_color_pars)) 
+  recon_color_pars_nodes[[i]] <-  recon_color_pars[[i]] 
+
+recon_color_pars_nodes <- do.call(rbind,recon_color_pars_nodes)
+
+# plot
+plot(compTree, no.margin = T, label.offset = 1, cex=0.9)
+nodelabels(pie=recon_color_pars_nodes[11:19,],piecol=c("gray","antiquewhite","burlywood4",
+                                                       "gold"),cex=0.6)
+tiplabels(bg=color_by_color, pch=22, cex=1, adj=1, lwd=0, col=color_by_color)
+legend("topleft", legend = c("Non-white","White","Cream-white","Deep yellow"),title = "Flower color",inset = 0, pch = 15,
+       col = c("gray","antiquewhite","burlywood4","gold"),
+       adj = 0, cex = 0.7, pt.cex = 1.25, bty="n", y.intersp = 1)
+```
+
+
+\pagebreak
+
+# Petal fringe
+
+## MPR
+
+```{r, label="petalMPR",eval=T, fig.height=3.5, fig.width=6.5, fig.align='center', echo=FALSE, cache=TRUE, message=FALSE, warning=FALSE, results="hide"}
+# make tip labels 
+color_by_fringe <- character(length(compData$petal))
+color_by_fringe[compData$petal == "0"] <- "gray"
+color_by_fringe[compData$petal == "1"] <- "orange"
+
+compdata_petal<- as.matrix(compData[c(1,6)])
+compdata_petal_phyDat <- phyDat(compdata_petal, type = "USER", levels=c("0","1"))
+recon_fringe_pars <- ancestral.pars(compTree, compdata_petal_phyDat, type="MPR",return = "prob")
+
+recon_fringe_pars_nodes <- list()
+for(i in 1:length(recon_fringe_pars)) 
+  recon_fringe_pars_nodes[[i]] <-  recon_fringe_pars[[i]] 
+
+recon_fringe_pars_nodes <- do.call(rbind,recon_fringe_pars_nodes)
+
+# plot
+plot(compTree, no.margin = T, label.offset = 1, cex=0.9)
+nodelabels(pie=recon_fringe_pars_nodes[11:19,],piecol=c("gray","orange"),cex=0.6)
+tiplabels(bg=color_by_fringe, pch=22, cex=1, adj=1, lwd=0, col=color_by_fringe)
+legend("topleft", legend = c("Entire","Lacerated"),title = "Petal fringe",inset = 0, pch = 15,
+       col = c("gray","orange"),
+       adj = 0, cex = 0.7, pt.cex = 1.25, bty="n", y.intersp = 1)
+
+```
+
+## ACCTRAN
+
+```{r, label="petalACCTRAN",eval=T, fig.height=3.5, fig.width=6.5, fig.align='center', echo=FALSE, cache=TRUE, message=FALSE, warning=FALSE, results="hide"}
+# make tip labels 
+color_by_fringe <- character(length(compData$petal))
+color_by_fringe[compData$petal == "0"] <- "gray"
+color_by_fringe[compData$petal == "1"] <- "orange"
+
+compdata_petal<- as.matrix(compData[c(1,6)])
+compdata_petal_phyDat <- phyDat(compdata_petal, type = "USER", levels=c("0","1"))
+recon_fringe_pars <- ancestral.pars(compTree, compdata_petal_phyDat, type="ACCTRAN",return = "prob")
+
+recon_fringe_pars_nodes <- list()
+for(i in 1:length(recon_fringe_pars)) 
+  recon_fringe_pars_nodes[[i]] <-  recon_fringe_pars[[i]] 
+
+recon_fringe_pars_nodes <- do.call(rbind,recon_fringe_pars_nodes)
+
+# plot
+plot(compTree, no.margin = T, label.offset = 1, cex=0.9)
+nodelabels(pie=recon_fringe_pars_nodes[11:19,],piecol=c("gray","orange"),cex=0.6)
+tiplabels(bg=color_by_fringe, pch=22, cex=1, adj=1, lwd=0, col=color_by_fringe)
+legend("topleft", legend = c("Entire","Lacerated"),title = "Petal fringe",inset = 0, pch = 15,
+       col = c("gray","orange"),
+       adj = 0, cex = 0.7, pt.cex = 1.25, bty="n", y.intersp = 1)
+
+```
+
+\pagebreak
+
+# Spur
+
+## MPR
+
+```{r, label="spurMPR",eval=T, fig.height=3.5, fig.width=6.5, fig.align='center', echo=FALSE, cache=TRUE, message=FALSE, warning=FALSE, results="hide"}
+# make tip labels 
+color_by_spur <- character(length(compData$spur))
+color_by_spur[compData$spur == "0"] <- "gray"
+color_by_spur[compData$spur == "1"] <- "orange"
+color_by_spur[compData$spur == "2"] <- "purple"
+
+# Make phyDat
+
+compdata_spur<- as.matrix(compData[c(1,7)])
+compdata_spur_phyDat <- phyDat(compdata_spur, type = "USER", levels=c("0","1","2"))
+recon_spur_pars <- ancestral.pars(compTree, compdata_spur_phyDat, type="MPR", return = "prob")
+
+recon_spur_pars_nodes <- list()
+for(i in 1:length(recon_spur_pars)) 
+  recon_spur_pars_nodes[[i]] <-  recon_spur_pars[[i]] 
+
+recon_spur_pars_nodes <- do.call(rbind,recon_spur_pars_nodes)
+
+# plot
+plot(compTree, no.margin = T, label.offset = 1, cex=0.9)
+nodelabels(pie=recon_spur_pars_nodes[11:19,],piecol=c("gray","orange"),cex=0.6)
+tiplabels(bg=color_by_spur, pch=22, cex=1, adj=1, lwd=0, col=color_by_spur)
+legend("topleft", legend = c("Absent","Long","Sac-like"),title = "Petal spur",inset = 0, pch = 15,
+       col = c("gray","orange","purple"),
+       adj = 0, cex = 0.7, pt.cex = 1.25, bty="n", y.intersp = 1)
+
+```
+
+## ACCTRAN
+
+```{r, label="spurACCTRAN",eval=T, fig.height=3.5, fig.width=6.5, fig.align='center', echo=FALSE, cache=TRUE, message=FALSE, warning=FALSE, results="hide"}
+# make tip labels 
+color_by_spur <- character(length(compData$spur))
+color_by_spur[compData$spur == "0"] <- "gray"
+color_by_spur[compData$spur == "1"] <- "orange"
+color_by_spur[compData$spur == "2"] <- "purple"
+
+# Make phyDat
+
+compdata_spur<- as.matrix(compData[c(1,7)])
+compdata_spur_phyDat <- phyDat(compdata_spur, type = "USER", levels=c("0","1","2"))
+recon_spur_pars <- ancestral.pars(compTree, compdata_spur_phyDat, type="ACCTRAN",return = "prob")
+
+recon_spur_pars_nodes <- list()
+for(i in 1:length(recon_spur_pars)) 
+  recon_spur_pars_nodes[[i]] <-  recon_spur_pars[[i]] 
+
+recon_spur_pars_nodes <- do.call(rbind,recon_spur_pars_nodes)
+
+# plot
+plot(compTree, no.margin = T, label.offset = 1, cex=0.9)
+nodelabels(pie=recon_spur_pars_nodes[11:19,],piecol=c("gray","orange"),cex=0.6)
+tiplabels(bg=color_by_spur, pch=22, cex=1, adj=1, lwd=0, col=color_by_spur)
+legend("topleft", legend = c("Absent","Long","Sac-like"),title = "Petal spur",inset = 0, pch = 15,
+       col = c("gray","orange","purple"),
+       adj = 0, cex = 0.7, pt.cex = 1.25, bty="n", y.intersp = 1)
+
+```
+
+\pagebreak
+
+# Anther position
+
+## MPR
+
+```{r, label="anthersMPR",eval=T, fig.height=3.5, fig.width=6.5, fig.align='center', echo=FALSE, cache=TRUE, message=FALSE, warning=FALSE, results="hide"}
+# make tip labels 
+color_by_anthers <- character(length(compData$anthers))
+color_by_anthers[compData$anthers == "0"] <- "gray"
+color_by_anthers[compData$anthers == "1"] <- "orange"
+
+compdata_anther<- as.matrix(compData[c(1,8)])
+compdata_anther_phyDat <- phyDat(compdata_anther, type = "USER", levels=c("0","1"))
+recon_anther_pars <- ancestral.pars(compTree, compdata_anther_phyDat, type="MPR",return = "prob")
+
+recon_anther_pars_nodes <- list()
+for(i in 1:length(recon_anther_pars)) 
+  recon_anther_pars_nodes[[i]] <-  recon_anther_pars[[i]] 
+
+recon_anther_pars_nodes <- do.call(rbind,recon_anther_pars_nodes)
+
+# plot
+plot(compTree, no.margin = T, label.offset = 1, cex=0.9)
+nodelabels(pie=recon_anther_pars_nodes[11:19,],piecol=c("gray","orange"),cex=0.6)
+tiplabels(bg=color_by_anthers, pch=22, cex=1, adj=1, lwd=0, col=color_by_anthers)
+legend("topleft", legend = c("Exserted","Inserted"),title = "Anther position in corolla",inset = 0, pch = 15,
+       col = c("orange","gray"),
+       adj = 0, cex = 0.7, pt.cex = 1.25, bty="n", y.intersp = 1)
+
+```
+
+## ACCTRAN
+
+```{r, label="anthersACCTRAN",eval=T, fig.height=3.5, fig.width=6.5, fig.align='center', echo=FALSE, cache=TRUE, message=FALSE, warning=FALSE, results="hide"}
+# make tip labels 
+color_by_anthers <- character(length(compData$anthers))
+color_by_anthers[compData$anthers == "0"] <- "gray"
+color_by_anthers[compData$anthers == "1"] <- "orange"
+
+compdata_anther<- as.matrix(compData[c(1,8)])
+compdata_anther_phyDat <- phyDat(compdata_anther, type = "USER", levels=c("0","1"))
+recon_anther_pars <- ancestral.pars(compTree, compdata_anther_phyDat, type="ACCTRAN",return = "prob")
+
+recon_anther_pars_nodes <- list()
+for(i in 1:length(recon_anther_pars)) 
+  recon_anther_pars_nodes[[i]] <-  recon_anther_pars[[i]] 
+
+recon_anther_pars_nodes <- do.call(rbind,recon_anther_pars_nodes)
+
+# plot
+plot(compTree, no.margin = T, label.offset = 1, cex=0.9)
+nodelabels(pie=recon_anther_pars_nodes[11:19,],piecol=c("gray","orange"),cex=0.6)
+tiplabels(bg=color_by_anthers, pch=22, cex=1, adj=1, lwd=0, col=color_by_anthers)
+legend("topleft", legend = c("Exserted","Inserted"),title = "Anther position in corolla",inset = 0, pch = 15,
+       col = c("orange","gray"),
+       adj = 0, cex = 0.7, pt.cex = 1.25, bty="n", y.intersp = 1)
+
+```
