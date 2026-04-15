@@ -1,4 +1,0 @@
-#NEXUS
-begin trees;
-	tree TREE_MCC_CA = [&R] ((I23928_Cet_Ceratotheca_triloba:11.985616,(((I23932_S01_Sesamothamnus_benguellensis:4.473701,I23937_S06_Sesamothamnus_leistneri:4.473701):1.028157,((I23934_S02_Sesamothamnus_guerichii:4.167683,((I23935_S11_Sesamothamnus_guerichii:2.630937,I23938_S04_Sesamothamnus_lugardii:2.630937):0.687702,I23936_S12_Sesamothamnus_guerichii:3.31864):0.849043):0.504029,(I23939_S10_Sesamothamnus_lugardii:3.893481,I23940_S14_Sesamothamnus_lugardii:3.893481):0.778231):0.830146):2.715037,(I23933_S05_Sesamothamnus_busseanus:7.195371,(I23941_S07_Sesamothamnus_rivae:1.590538,I23942_S08_Sesamothamnus_rivae:1.590538):5.604832):1.021524):3.768721):1.144839,(I23930_Pt_Pterodiscus_aurantiacus:11.587129,(I23943_U027_Uncarina_abbreviata:4.535258,I23956_U034_Uncarina_platycarpa:4.535258):7.051871):1.543327);
-end;
